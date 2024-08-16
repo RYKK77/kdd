@@ -15,8 +15,6 @@ import java.io.Writer;
 /**
  * 代码生成器
  *
- * @author <a href="https://github.com/lirykk">程序员鱼皮</a>
- * @from <a href="https://www.code-nav.cn">编程导航学习圈</a>
  */
 public class CodeGenerator {
 
@@ -30,9 +28,10 @@ public class CodeGenerator {
     public static void main(String[] args) throws TemplateException, IOException {
         // 指定生成参数
         String packageName = "com.rykk.kdd";
-        String dataName = "用户评论";
-        String dataKey = "userComment";
-        String upperDataKey = "UserComment";
+        String dataName = "用户答案";
+        String dataKey = "userAnswer";
+//        String upperDataKey = "question";
+        String upperDataKey = dataKey.substring(0, 1).toUpperCase() + dataKey.substring(1);
 
         // 封装生成参数
         Map<String, Object> dataModel = new HashMap<>();
