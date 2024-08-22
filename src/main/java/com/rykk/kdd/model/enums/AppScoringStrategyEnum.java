@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
  * 应用状态枚举
  *
  */
-public enum AppScoringStrategyTypeEnum {
+public enum AppScoringStrategyEnum {
 
     CUSTOM("自定义", 0),
     AI("AI评分", 1);
@@ -19,7 +19,7 @@ public enum AppScoringStrategyTypeEnum {
 
     private final int value;
 
-    AppScoringStrategyTypeEnum(String text, int value) {
+    AppScoringStrategyEnum(String text, int value) {
         this.text = text;
         this.value = value;
     }
@@ -30,11 +30,11 @@ public enum AppScoringStrategyTypeEnum {
      * @param value
      * @return
      */
-    public static AppScoringStrategyTypeEnum getEnumByValue(Integer value) {
+    public static AppScoringStrategyEnum getEnumByValue(Integer value) {
         if (ObjectUtil.isEmpty(value)) {
             return null;
         }
-        for (AppScoringStrategyTypeEnum anEnum : AppScoringStrategyTypeEnum.values()) {
+        for (AppScoringStrategyEnum anEnum : AppScoringStrategyEnum.values()) {
             if (anEnum.value == value) {
                 return anEnum;
             }

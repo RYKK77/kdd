@@ -1,6 +1,8 @@
 package com.rykk.kdd.model.vo;
 
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.rykk.kdd.model.entity.UserAnswer;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
@@ -15,24 +17,58 @@ import java.util.List;
  */
 @Data
 public class UserAnswerVO implements Serializable {
-
     /**
-     * id
+     *
      */
     private Long id;
 
     /**
-     * 标题
+     * 应用 id
      */
-    private String title;
+    private Long appId;
 
     /**
-     * 内容
+     * 应用类型（0-得分类，1-角色测评类）
      */
-    private String content;
+    private Integer appType;
 
     /**
-     * 创建用户 id
+     * 评分策略（0-自定义，1-AI）
+     */
+    private Integer scoringStrategy;
+
+    /**
+     * 用户答案（JSON 数组）
+     */
+    private List<String> choices;
+
+    /**
+     * 评分结果 id
+     */
+    private Long resultId;
+
+    /**
+     * 结果名称，如物流师
+     */
+    private String resultName;
+
+    /**
+     * 结果描述
+     */
+    private String resultDesc;
+
+    /**
+     * 结果图标
+     */
+    private String resultPicture;
+
+    /**
+     * 得分
+     */
+    private Integer resultScore;
+
+    /**
+     * 用户 id
      */
     private Long userId;
 
@@ -45,12 +81,6 @@ public class UserAnswerVO implements Serializable {
      * 更新时间
      */
     private Date updateTime;
-
-    /**
-     * 标签列表
-     */
-    private List<String> tagList;
-
     /**
      * 创建用户信息
      */
@@ -68,8 +98,7 @@ public class UserAnswerVO implements Serializable {
         }
         UserAnswer userAnswer = new UserAnswer();
         BeanUtils.copyProperties(userAnswerVO, userAnswer);
-        List<String> tagList = userAnswerVO.getTagList();
-        userAnswer.setTags(JSONUtil.toJsonStr(tagList));
+        userAnswer.setChoices(JSONUtil.toJsonStr(userAnswerVO.getChoices()));
         return userAnswer;
     }
 
@@ -85,7 +114,7 @@ public class UserAnswerVO implements Serializable {
         }
         UserAnswerVO userAnswerVO = new UserAnswerVO();
         BeanUtils.copyProperties(userAnswer, userAnswerVO);
-        userAnswerVO.setTagList(JSONUtil.toList(userAnswer.getTags(), String.class));
+        userAnswerVO.setChoices(JSONUtil.toList(userAnswer.getChoices(), String.class));
         return userAnswerVO;
     }
 }

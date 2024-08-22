@@ -13,6 +13,11 @@ import java.util.List;
 public class UserAnswerEditRequest implements Serializable {
 
     /**
+     * id
+     */
+    private Long id;
+
+    /**
      * 应用 id
      */
     private Long appId;
