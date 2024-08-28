@@ -7,8 +7,18 @@ package com.rykk.kdd.constant;
 public interface FileConstant {
 
     /**
-     * COS 访问地址
-     * todo 需替换配置
+     * OSS 访问地址
      */
-    String COS_HOST = "https://rykk.icu";
+    String OSS_HOST = "https://kdd-rykk.oss-cn-beijing.aliyuncs.com";
+
+    /**
+     * OSS 访问地址
+     */
+    String OSS_ENDPOINT = "https://oss-cn-beijing.aliyuncs.com";
+
+
+    /**
+     * bucket名
+     */
+    String BUCKET_NAME = "kdd-rykk";
 }

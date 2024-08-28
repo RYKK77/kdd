@@ -4,6 +4,9 @@ import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.zhipu.oapi.ClientV4;
 import com.zhipu.oapi.Constants;
+import com.zhipu.oapi.service.v4.image.CreateImageRequest;
+import com.zhipu.oapi.service.v4.image.ImageApiResponse;
+import com.zhipu.oapi.service.v4.image.ImageResult;
 import com.zhipu.oapi.service.v4.model.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +41,21 @@ public class ZhipuAITest {
                 .build();
         ModelApiResponse invokeModelApiResp = client.invokeModelApi(chatCompletionRequest);
         System.out.println("model output:" + invokeModelApiResp.getData().getChoices());
+    }
+    @Test
+    public void testForImg() {
+        CreateImageRequest createImageRequest = new CreateImageRequest();
+        createImageRequest.setModel(Constants.ModelCogView);
+        createImageRequest.setPrompt("小猫游泳");
+//        createImageRequest.setRequestId("test11111111111111");
+        ImageApiResponse imageApiResponse = client.createImage(createImageRequest);
+        int code = imageApiResponse.getCode();
+        String msg = imageApiResponse.getMsg();
+        boolean success = imageApiResponse.isSuccess();
+        ImageResult data = imageApiResponse.getData();
+        String string = data.getData().get(0).getUrl();
+        System.out.println("code:" + code + "\n msg:" + msg + "\n success:" + success + "\n data:" + JSON.toJSONString(data));
+        System.out.println(string);
     }
 
 

@@ -6,7 +6,7 @@ import com.rykk.kdd.common.ErrorCode;
 import com.rykk.kdd.common.ResultUtils;
 import com.rykk.kdd.constant.FileConstant;
 import com.rykk.kdd.exception.BusinessException;
-import com.rykk.kdd.manager.CosManager;
+import com.rykk.kdd.manager.OssManager;
 import com.rykk.kdd.model.dto.file.UploadFileRequest;
 import com.rykk.kdd.model.entity.User;
 import com.rykk.kdd.model.enums.FileUploadBizEnum;
@@ -36,7 +36,7 @@ public class FileController {
     private UserService userService;
 
     @Resource
-    private CosManager cosManager;
+    private OssManager ossManager;
 
     /**
      * 文件上传
@@ -59,15 +59,16 @@ public class FileController {
         // 文件目录：根据业务、用户来划分
         String uuid = RandomStringUtils.randomAlphanumeric(8);
         String filename = uuid + "-" + multipartFile.getOriginalFilename();
-        String filepath = String.format("/%s/%s/%s", fileUploadBizEnum.getValue(), loginUser.getId(), filename);
+        String filepath = String.format("%s/%s/%s", fileUploadBizEnum.getValue(), loginUser.getId(), filename);
+        filepath = "kdd/" + filepath;
         File file = null;
         try {
             // 上传文件
             file = File.createTempFile(filepath, null);
             multipartFile.transferTo(file);
-            cosManager.putObject(filepath, file);
+            ossManager.putObject(filepath, file);
             // 返回可访问地址
-            return ResultUtils.success(FileConstant.COS_HOST + filepath);
+            return ResultUtils.success(FileConstant.OSS_HOST + '/' + filepath);
         } catch (Exception e) {
             log.error("file upload error, filepath = " + filepath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");

@@ -64,6 +64,7 @@ public class AiTestScoringStrategy implements ScoringStrategy {
         for (int i = 0; i < questionContentDTOList.size(); i++) {
             QuestionAnswerDTO questionAnswerDTO = new QuestionAnswerDTO();
             questionAnswerDTO.setTitle(questionContentDTOList.get(i).getTitle());
+            // TODO 选项要填入内容，而不是编号
             questionAnswerDTO.setUserAnswer(choices.get(i));
             questionAnswerDTOList.add(questionAnswerDTO);
         }
@@ -77,7 +78,7 @@ public class AiTestScoringStrategy implements ScoringStrategy {
         Long appId = app.getId();
         // 1. 根据 id 查询到题目
         Question question = questionService.getOne(
-                Wrappers.lambdaQuery(Question.class).eq(Question::getAppId, appId)
+            Wrappers.lambdaQuery(Question.class).eq(Question::getAppId, appId)
         );
         QuestionVO questionVO = QuestionVO.objToVo(question);
         List<QuestionContentDTO> questionContent = questionVO.getQuestionContent();
