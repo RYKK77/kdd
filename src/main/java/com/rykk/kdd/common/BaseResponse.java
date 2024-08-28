@@ -30,4 +30,6 @@ public class BaseResponse<T> implements Serializable {
     public BaseResponse(ErrorCode errorCode) {
         this(errorCode.getCode(), null, errorCode.getMessage());
     }
+
+    private static final long serialVersionUID = 1L;
 }

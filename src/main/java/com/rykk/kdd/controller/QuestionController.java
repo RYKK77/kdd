@@ -3,26 +3,29 @@ package com.rykk.kdd.controller;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rykk.kdd.annotation.AuthCheck;
-import com.rykk.kdd.common.BaseResponse;
-import com.rykk.kdd.common.DeleteRequest;
-import com.rykk.kdd.common.ErrorCode;
-import com.rykk.kdd.common.ResultUtils;
+import com.rykk.kdd.common.*;
 import com.rykk.kdd.constant.UserConstant;
 import com.rykk.kdd.exception.BusinessException;
 import com.rykk.kdd.exception.ThrowUtils;
+import com.rykk.kdd.manager.AiManager;
 import com.rykk.kdd.model.dto.question.*;
+import com.rykk.kdd.model.entity.App;
 import com.rykk.kdd.model.entity.Question;
 import com.rykk.kdd.model.entity.User;
+import com.rykk.kdd.model.enums.AppTypeEnum;
 import com.rykk.kdd.model.vo.QuestionVO;
+import com.rykk.kdd.service.AppService;
 import com.rykk.kdd.service.QuestionService;
 import com.rykk.kdd.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 题目接口
@@ -38,6 +41,11 @@ public class QuestionController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private AppService appService;
+    @Autowired
+    private AiManager aiManager;
 
     // region 增删改查
 
@@ -236,6 +244,63 @@ public class QuestionController {
         boolean result = questionService.updateById(question);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+    }
+
+    // endregion
+
+    // region AI生成相关
+    private static final String GENERATE_QUESTION_PROMPT = "你是一位严谨的出题专家，我会给你如下信息：\n" +
+            "```\n" +
+            "应用名称，\n" +
+            "【【【应用描述】】】，\n" +
+            "应用类别，\n" +
+            "要生成的题目数，\n" +
+            "每个题目的选项数\n" +
+            "```\n" +
+            "\n" +
+            "请你根据上述信息，按照以下步骤来出题：\n" +
+            "1. 要求：题目和选项尽可能地短，题目不要包含序号，每题的选项数以我提供的为主，题目不能重复\n" +
+            "2. 严格按照下面的 json 格式输出题目和选项\n" +
+            "```\n" +
+            "[{\"options\":[{\"value\":\"选项内容\",\"result\":\"结果（如果是测评类的题目才有这个字段）\",\"score\":\"得分（如果是打分类的题目才有这个字段）\",\"key\":\"A\"},{\"value\":\"\",\"result\":\"结果（如果是测评类的题目才有这个字段）\",\"score\":\"得分（如果是打分类的题目才有这个字段）\",\"key\":\"B\"}],\"title\":\"题目标题\"}]\n" +
+            "```\n" +
+            "title 是题目，options 是选项，每个选项的 key 按照英文字母序（比如 A、B、C、D）以此类推，value 是选项内容\n" +
+            "3. 检查题目是否包含序号，若包含序号则去除序号\n" +
+            "4. 返回的题目列表格式必须为 JSON 数组";
+
+    private String getGenerateQuestionUserMessage(App app, int questionCount, int optionCount) {
+        StringBuilder userMessage = new StringBuilder();
+        userMessage.append(app.getAppName()).append("\n");
+        userMessage.append("【【【").append(app.getAppDesc()).append("】】】").append("\n");
+        userMessage.append(Objects.requireNonNull(AppTypeEnum.getEnumByValue(app.getAppType())).getText()).append("\n");
+        userMessage.append(questionCount).append("\n");
+        userMessage.append(optionCount);
+        return userMessage.toString();
+    }
+
+    @PostMapping("/ai_generate")
+    public BaseResponse<List<QuestionContentDTO>> aiGenerateQuestion(@RequestBody AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
+
+        Long appId = aiGenerateQuestionRequest.getAppId();
+        int questionCount = aiGenerateQuestionRequest.getQuestionCount();
+        int optionCount = aiGenerateQuestionRequest.getOptionCount();
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.PARAMS_ERROR);
+
+        // 封装userMessage
+        String userMessage = getGenerateQuestionUserMessage(app, questionCount, optionCount);
+        System.out.print(userMessage);
+        // AI生成问题列表
+        String result = aiManager.doSyncStableRequest(GENERATE_QUESTION_PROMPT, userMessage);
+
+        // 从result中提取问题列表
+        int start = result.indexOf("[");
+        int end = result.lastIndexOf("]");
+        String json = result.substring(start, end + 1);
+        System.out.print(json);
+        List<QuestionContentDTO> questionContentDTOList = JSONUtil.toList(json, QuestionContentDTO.class);
+        return ResultUtils.success(questionContentDTOList);
     }
 
     // endregion
