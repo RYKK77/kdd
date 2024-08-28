@@ -19,6 +19,7 @@ import com.rykk.kdd.model.entity.UserAnswer;
 import com.rykk.kdd.model.entity.User;
 import com.rykk.kdd.model.enums.ReviewStatusEnum;
 import com.rykk.kdd.model.vo.UserAnswerVO;
+import com.rykk.kdd.scoring.ScoringStrategyExecutor;
 import com.rykk.kdd.service.AppService;
 import com.rykk.kdd.service.UserAnswerService;
 import com.rykk.kdd.service.UserService;
@@ -48,6 +49,9 @@ public class UserAnswerController {
 
     @Resource
     private AppService appService;
+
+    @Resource
+    private ScoringStrategyExecutor scoringStrategyExecutor;
 
     // region 增删改查
 
@@ -88,15 +92,15 @@ public class UserAnswerController {
         // 返回新写入的数据 id
         long newUserAnswerId = userAnswer.getId();
         // 调用评分模块
-/*        try {
+        try {
             UserAnswer userAnswerWithResult = scoringStrategyExecutor.doScore(choices, app);
             userAnswerWithResult.setId(newUserAnswerId);
-            userAnswerWithResult.setAppId(null);
+//            userAnswerWithResult.setAppId(null);
             userAnswerService.updateById(userAnswerWithResult);
         } catch (Exception e) {
             e.printStackTrace();
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "评分错误");
-        }*/
+        }
         return ResultUtils.success(newUserAnswerId);
     }
 

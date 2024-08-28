@@ -72,3 +72,6 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.rykk.kdd.controller
+
+ai:
+  apiKey: d94d0a72f297ac24c89377af4f4fa3dd.5yIaSbe0X4AGC5ix
