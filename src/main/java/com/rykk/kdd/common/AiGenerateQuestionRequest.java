@@ -15,12 +15,12 @@ public class AiGenerateQuestionRequest implements Serializable {
     /**
      * 题目数量
      */
-    int questionCount = 10;
+    int questionNumber = 10;
 
     /**
      * 选项数量
      */
-    int optionCount = 4;
+    int optionNumber = 4;
 
     private static final long serialVersionUID = 1L;
 }

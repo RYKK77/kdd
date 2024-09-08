@@ -1,7 +1,6 @@
 package com.rykk.kdd;
 
 import com.alibaba.fastjson.JSON;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.zhipu.oapi.ClientV4;
 import com.zhipu.oapi.Constants;
 import com.zhipu.oapi.service.v4.image.CreateImageRequest;

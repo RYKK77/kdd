@@ -2,8 +2,12 @@ package com.rykk.kdd.manager;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.zhipu.oapi.ClientV4;
 import com.zhipu.oapi.Constants;
+import com.zhipu.oapi.service.v4.image.CreateImageRequest;
+import com.zhipu.oapi.service.v4.image.ImageApiResponse;
+import com.zhipu.oapi.service.v4.image.ImageResult;
 import com.zhipu.oapi.service.v4.model.ChatCompletionRequest;
 import com.zhipu.oapi.service.v4.model.ChatMessage;
 import com.zhipu.oapi.service.v4.model.ChatMessageRole;
@@ -72,6 +76,26 @@ public class AiManager {
         ModelApiResponse invokeModelApiResp = clientV4.invokeModelApi(chatCompletionRequest);
         ChatMessage message = invokeModelApiResp.getData().getChoices().get(0).getMessage();
         return message.getContent().toString();
+    }
+
+    /**
+     * 根据描述生成图标
+     * @param command 生成命令
+     * @return
+     */
+    public String doIconRequest(String command) {
+
+        CreateImageRequest createImageRequest = new CreateImageRequest();
+        createImageRequest.setModel(Constants.ModelCogView);
+        createImageRequest.setPrompt(command);
+        ImageApiResponse imageApiResponse = clientV4.createImage(createImageRequest);
+        int code = imageApiResponse.getCode();
+        String msg = imageApiResponse.getMsg();
+        boolean success = imageApiResponse.isSuccess();
+        ImageResult data = imageApiResponse.getData();
+        String iconURL = data.getData().get(0).getUrl();
+//        System.out.println("code:" + code + "\n msg:" + msg + "\n success:" + success + "\n data:" + JSON.toJSONString(data));
+        return iconURL;
     }
 
 }

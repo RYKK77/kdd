@@ -3,8 +3,10 @@ package com.rykk.kdd.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.rykk.kdd.model.dto.app.AppAddRequest;
 import com.rykk.kdd.model.dto.app.AppQueryRequest;
 import com.rykk.kdd.model.entity.App;
+import com.rykk.kdd.model.entity.User;
 import com.rykk.kdd.model.vo.AppVO;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,4 +50,12 @@ public interface AppService extends IService<App> {
      * @return
      */
     Page<AppVO> getAppVOPage(Page<App> appPage, HttpServletRequest request);
+
+    /**
+     * 创建应用
+     * @param appAddRequest APP相关描述
+     * @param loginUser  当前登录用户
+     * @return AppID
+     */
+    Long addApp(AppAddRequest appAddRequest, User loginUser);
 }

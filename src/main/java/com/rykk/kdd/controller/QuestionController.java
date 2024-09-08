@@ -283,8 +283,8 @@ public class QuestionController {
         ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
 
         Long appId = aiGenerateQuestionRequest.getAppId();
-        int questionCount = aiGenerateQuestionRequest.getQuestionCount();
-        int optionCount = aiGenerateQuestionRequest.getOptionCount();
+        int questionCount = aiGenerateQuestionRequest.getQuestionNumber();
+        int optionCount = aiGenerateQuestionRequest.getOptionNumber();
         App app = appService.getById(appId);
         ThrowUtils.throwIf(app == null, ErrorCode.PARAMS_ERROR);
 

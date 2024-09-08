@@ -51,20 +51,9 @@ public class AppController {
     @PostMapping("/add")
     public BaseResponse<Long> addApp(@RequestBody AppAddRequest appAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR);
-        // 在此处将实体类和 DTO 进行转换
-        App app = new App();
-        BeanUtils.copyProperties(appAddRequest, app);
-        // 数据校验
-        appService.validApp(app, true);
-        // 填充默认值
-        User loginUser = userService.getLoginUser(request);
-        app.setUserId(loginUser.getId());
-        app.setReviewStatus(ReviewStatusEnum.REVIEWING.getValue());
-        // 写入数据库
-        boolean result = appService.save(app);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
         // 返回新写入的数据 id
-        long newAppId = app.getId();
+        long newAppId = appService.addApp(appAddRequest, userService.getLoginUser(request));
         return ResultUtils.success(newAppId);
     }
 

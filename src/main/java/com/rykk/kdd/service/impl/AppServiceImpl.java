@@ -7,7 +7,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rykk.kdd.common.ErrorCode;
 import com.rykk.kdd.constant.CommonConstant;
 import com.rykk.kdd.exception.ThrowUtils;
+import com.rykk.kdd.manager.AiManager;
+import com.rykk.kdd.manager.OssManager;
 import com.rykk.kdd.mapper.AppMapper;
+import com.rykk.kdd.model.dto.app.AppAddRequest;
 import com.rykk.kdd.model.dto.app.AppQueryRequest;
 import com.rykk.kdd.model.entity.App;
 import com.rykk.kdd.model.entity.User;
@@ -22,6 +25,7 @@ import com.rykk.kdd.utils.SqlUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -39,6 +43,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private AiManager aiManager;
+
+    @Resource
+    private OssManager ossManager;
 
     /**
      * 校验数据
@@ -196,6 +206,35 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
         appVOPage.setRecords(appVOList);
         return appVOPage;
+    }
+
+    @Override
+    public Long addApp(AppAddRequest appAddRequest, User loginUser) {
+
+        // 在此处将实体类和 DTO 进行转换
+        App app = new App();
+        BeanUtils.copyProperties(appAddRequest, app);        // 数据校验
+        this.validApp(app, true);
+        // 填充默认值
+        app.setUserId(loginUser.getId());
+        app.setReviewStatus(ReviewStatusEnum.REVIEWING.getValue());
+        // 写入数据库
+        boolean result = this.save(app);
+
+        // TODO AI生成图标
+        String appDesc = app.getAppDesc();
+        // 拼接ai生成命令
+        String command = "我现在在床架一共应用，请你根据我的描述生成一个应用图标，描述如下：\n" + appDesc;
+        String url = aiManager.doIconRequest(command);
+
+        String realURL = ossManager.putObjectFromURL(app, url);
+
+        app.setAppIcon(realURL);
+
+        this.updateById(app);
+
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return app.getId();
     }
 
 }
