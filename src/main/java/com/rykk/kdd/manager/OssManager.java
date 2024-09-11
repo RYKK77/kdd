@@ -79,7 +79,7 @@ public class OssManager {
             // 生成基于APPID和日期的文件名
             Long id = app.getId();
             String fileName = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".png";
-            String objectName = "kdd/" + id + "-" + fileName;
+            String objectName = "kdd/app_icon/" + id + "-" + fileName;
 
             // 上传文件到指定的OSS目录中
             PutObjectResult putObjectResult = ossClient.putObject("kdd-rykk", objectName, inputStream);
