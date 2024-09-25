@@ -7,18 +7,15 @@ import com.rykk.kdd.model.dto.question.QuestionAnswerDTO;
 import com.rykk.kdd.model.dto.question.QuestionContentDTO;
 import com.rykk.kdd.model.entity.App;
 import com.rykk.kdd.model.entity.Question;
-import com.rykk.kdd.model.entity.ScoringResult;
 import com.rykk.kdd.model.entity.UserAnswer;
 import com.rykk.kdd.model.enums.AppScoringStrategyEnum;
 import com.rykk.kdd.model.enums.AppTypeEnum;
 import com.rykk.kdd.model.vo.QuestionVO;
 import com.rykk.kdd.service.QuestionService;
-import com.rykk.kdd.service.ScoringResultService;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * AI打分类应用评分策略
@@ -34,12 +31,12 @@ public class AiScoreScoringStrategy implements ScoringStrategy {
     private AiManager aiManager;
 
 
-    private static final String AI_TEST_SCORING_SYSTEM_MESSAGE ="你是一位严谨的判题专家，我会给你如下信息：\n" +
+    private static final String AI_TEST_SCORING_SYSTEM_MESSAGE = "你是一位严谨的判题专家，我会给你如下信息：\n" +
             "```\n" +
-            "应用名称，\n"+
+            "应用名称，\n" +
             "【【【应用描述】】】，\n" +
             "题目和用户回答的列表：格式为 [{\"title\": \"题目\",\"answer\": \"用户回答\"}]\n" +
-            "```\n"+
+            "```\n" +
             "\n" +
             "请你根据上述信息，按照以下步骤来对用户进行评价：\n" +
             "1. 要求：需要给出一个明确的评价结果，包括评价名称（尽量简短）和评价描述（尽量详细，大于 200 字）\n" +
@@ -51,6 +48,7 @@ public class AiScoreScoringStrategy implements ScoringStrategy {
 
     /**
      * AI评分消息封装
+     *
      * @param app
      * @param questionContentDTOList
      * @param choices
@@ -70,6 +68,7 @@ public class AiScoreScoringStrategy implements ScoringStrategy {
         userMessage.append(JSONUtil.toJsonStr(questionAnswerDTOList));
         return userMessage.toString();
     }
+
     @Override
     public UserAnswer doScore(List<String> choices, App app) throws Exception {
         Long appId = app.getId();
@@ -96,5 +95,6 @@ public class AiScoreScoringStrategy implements ScoringStrategy {
         userAnswer.setChoices(JSONUtil.toJsonStr(choices));
         return userAnswer;
     }
+
 
 }

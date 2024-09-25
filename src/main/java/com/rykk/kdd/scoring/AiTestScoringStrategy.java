@@ -2,6 +2,8 @@ package com.rykk.kdd.scoring;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.rykk.kdd.manager.AiManager;
 import com.rykk.kdd.model.dto.question.QuestionAnswerDTO;
 import com.rykk.kdd.model.dto.question.QuestionContentDTO;
@@ -14,12 +16,14 @@ import com.rykk.kdd.model.enums.AppTypeEnum;
 import com.rykk.kdd.model.vo.QuestionVO;
 import com.rykk.kdd.service.QuestionService;
 import com.rykk.kdd.service.ScoringResultService;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AI测评类应用评分策略
@@ -33,6 +37,16 @@ public class AiTestScoringStrategy implements ScoringStrategy {
     @Resource
     private AiManager aiManager;
 
+    // 定义一个缓存对象，用于存储答案
+    private final Cache<String, String> answerCacheMap =
+            // 使用Caffeine创建缓存对象
+            Caffeine.newBuilder()
+                    // 设置初始容量为1024
+                    .initialCapacity(1024)
+                    // 设置缓存项在最后一次被访问后5分钟过期
+                    .expireAfterAccess(5L, TimeUnit.MINUTES)
+                    // 构建缓存对象
+                    .build();
 
     private static final String AI_TEST_SCORING_SYSTEM_MESSAGE ="你是一位严谨的判题专家，我会给你如下信息：\n" +
             "```\n" +
@@ -60,14 +74,34 @@ public class AiTestScoringStrategy implements ScoringStrategy {
         StringBuilder userMessage = new StringBuilder();
         userMessage.append(app.getAppName()).append("\n");
         userMessage.append(app.getAppDesc()).append("\n");
+        Question questions = questionService.getById(app.getId());
+        String questionContentStr = questions.getQuestionContent();
+//        List<QuestionContentDTO> questionContent = JSONUtil.toList(JSONUtil.parseArray(questionContentStr), QuestionContentDTO.class);
+
         List<QuestionAnswerDTO> questionAnswerDTOList = new ArrayList<>();
         for (int i = 0; i < questionContentDTOList.size(); i++) {
             QuestionAnswerDTO questionAnswerDTO = new QuestionAnswerDTO();
+
+            // 设置题目标题
             questionAnswerDTO.setTitle(questionContentDTOList.get(i).getTitle());
-            // TODO 选项要填入内容，而不是编号
-            questionAnswerDTO.setUserAnswer(choices.get(i));
+
+            // 获取用户的选择（比如 'A', 'B', 'C', 'D'）
+            String userChoice = choices.get(i);
+
+            // 查找用户选择对应的选项内容
+            QuestionContentDTO questionContentDTO = questionContentDTOList.get(i);
+            for (QuestionContentDTO.Option option : questionContentDTO.getOptions()) {
+                // 假设 'A', 'B', 'C', 'D' 存储在 Option 的 key 字段中
+                if (option.getKey().equals(userChoice)) {  // 比较用户选择的选项
+                    questionAnswerDTO.setUserAnswer(option.getValue());  // 设置选项的实际内容
+                    break;  // 找到匹配项后即可退出循环
+                }
+            }
+            // 将每个 QuestionAnswerDTO 加入列表
             questionAnswerDTOList.add(questionAnswerDTO);
         }
+
+
         userMessage.append(JSONUtil.toJsonStr(questionAnswerDTOList));
         return userMessage.toString();
     }
@@ -98,6 +132,11 @@ public class AiTestScoringStrategy implements ScoringStrategy {
         userAnswer.setScoringStrategy(app.getScoringStrategy());
         userAnswer.setChoices(JSONUtil.toJsonStr(choices));
         return userAnswer;
+    }
+
+
+    private String buildCacheKey(String appId, String choicesStr) {
+        return DigestUtils.md5Hex(appId + ":" + choicesStr);
     }
 
 
