@@ -3,15 +3,15 @@ package com.rykk.kdd.manager;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.rykk.kdd.common.ErrorCode;
+import com.rykk.kdd.exception.BusinessException;
 import com.zhipu.oapi.ClientV4;
 import com.zhipu.oapi.Constants;
 import com.zhipu.oapi.service.v4.image.CreateImageRequest;
 import com.zhipu.oapi.service.v4.image.ImageApiResponse;
 import com.zhipu.oapi.service.v4.image.ImageResult;
-import com.zhipu.oapi.service.v4.model.ChatCompletionRequest;
-import com.zhipu.oapi.service.v4.model.ChatMessage;
-import com.zhipu.oapi.service.v4.model.ChatMessageRole;
-import com.zhipu.oapi.service.v4.model.ModelApiResponse;
+import com.zhipu.oapi.service.v4.model.*;
+import io.reactivex.Flowable;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -68,7 +68,7 @@ public class AiManager {
         ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
                 .model(Constants.ModelChatGLM4)
                 .stream(isStream)
-//                .temperature(temperature)
+                .temperature(temperature)
                 .invokeMethod(Constants.invokeMethod)
                 .messages(messages)
 //                .requestId(requestId)
@@ -76,6 +76,56 @@ public class AiManager {
         ModelApiResponse invokeModelApiResp = clientV4.invokeModelApi(chatCompletionRequest);
         ChatMessage message = invokeModelApiResp.getData().getChoices().get(0).getMessage();
         return message.getContent().toString();
+    }
+
+
+
+    /**
+     * 流式请求大模型问答（通用一点的请求
+     * 简化消息传递
+     *
+     * @param systemMessage 系统消息
+     * @param userMessage   用户消息
+     * @param temperature   温度
+     * @return 消息
+     */
+    public Flowable<ModelData> doStreamRequest(String systemMessage, String userMessage, Float temperature) {
+        List<ChatMessage> messages = new ArrayList<>();
+        if (StrUtil.isNotEmpty(systemMessage)) {
+            messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemMessage));
+        }
+        if (StrUtil.isNotEmpty(userMessage)) {
+            messages.add(new ChatMessage(ChatMessageRole.USER.value(), userMessage));
+        }
+        return doStreamRequest(messages, temperature);
+
+    }
+
+    /**
+     * 流式请求大模型问答
+     *
+     * @param messages    消息列表
+     * @param temperature 温度
+     * @return 消息结果
+     */
+    public Flowable<ModelData> doStreamRequest(List<ChatMessage> messages, Float temperature) {
+        ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
+                .model(Constants.ModelChatGLM4)
+                .stream(Boolean.TRUE)
+                .temperature(temperature)
+                .invokeMethod(Constants.invokeMethod)
+                .messages(messages)
+//                .requestId(requestId)
+                .build();
+
+        try {
+            ModelApiResponse invokeModelApiResp = clientV4.invokeModelApi(chatCompletionRequest);
+            return invokeModelApiResp.getFlowable();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
+        }
+
     }
 
     /**

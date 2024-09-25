@@ -1,5 +1,6 @@
 package com.rykk.kdd.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rykk.kdd.annotation.AuthCheck;
@@ -17,15 +18,23 @@ import com.rykk.kdd.model.vo.QuestionVO;
 import com.rykk.kdd.service.AppService;
 import com.rykk.kdd.service.QuestionService;
 import com.rykk.kdd.service.UserService;
+import com.zhipu.oapi.service.v4.model.ModelData;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.sql.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 题目接口
@@ -288,9 +297,9 @@ public class QuestionController {
         App app = appService.getById(appId);
         ThrowUtils.throwIf(app == null, ErrorCode.PARAMS_ERROR);
 
-        // 封装userMessage
+        // 封装userMessage(prompt)
         String userMessage = getGenerateQuestionUserMessage(app, questionCount, optionCount);
-        System.out.print(userMessage);
+        log.info(userMessage);
         // AI生成问题列表
         String result = aiManager.doSyncStableRequest(GENERATE_QUESTION_PROMPT, userMessage);
 
@@ -298,10 +307,83 @@ public class QuestionController {
         int start = result.indexOf("[");
         int end = result.lastIndexOf("]");
         String json = result.substring(start, end + 1);
-        System.out.print(json);
+        log.info(json);
         List<QuestionContentDTO> questionContentDTOList = JSONUtil.toList(json, QuestionContentDTO.class);
         return ResultUtils.success(questionContentDTOList);
     }
+
+    // 要使用SSE返回，一定要用get方法
+    @GetMapping("/ai_generate/sse")
+    public SseEmitter aiGenerateQuestionSSE(AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
+
+        Long appId = aiGenerateQuestionRequest.getAppId();
+        int questionCount = aiGenerateQuestionRequest.getQuestionNumber();
+        int optionCount = aiGenerateQuestionRequest.getOptionNumber();
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.PARAMS_ERROR);
+
+        // 封装userMessage(prompt)
+        String userMessage = getGenerateQuestionUserMessage(app, questionCount, optionCount);
+        log.info(userMessage);
+        //  建立 SSE 连接对象， 0 表示永不超时
+        SseEmitter emitter = new SseEmitter(0L);
+        // AI生成问题列表
+        Flowable<ModelData> result = aiManager.doStreamRequest(GENERATE_QUESTION_PROMPT, userMessage, null);
+        StringBuilder contentBuilder = new StringBuilder();
+        AtomicInteger flag = new AtomicInteger(0);  //括号的合法标志，采用AtomicInteger是为了实现线程安全
+        result
+                .onBackpressureBuffer()
+                .observeOn(Schedulers.io())
+                .map(chuck -> chuck.getChoices().get(0).getDelta().getContent())
+                .map(msg -> msg.replace("\\s", ""))
+                .filter(StrUtil::isNotBlank)
+                .flatMap(msg -> {
+                    ArrayList<Character> charList = new ArrayList<>();
+                    for (char c : msg.toCharArray()) {
+                        charList.add(c);
+                    }
+                    return Flowable.fromIterable(charList);
+                })
+                .doOnNext(c -> {
+                    if (c == '{') {
+                        flag.incrementAndGet();
+                    }
+                    if (flag.get() > 0) {
+                        contentBuilder.append(c);
+                    }
+                    if (c == '}') {
+                        flag.decrementAndGet();
+                        if (flag.get() == 0) {
+                            emitter.send(contentBuilder.toString());
+                            contentBuilder.setLength(0);
+                        }
+                    }
+                })
+                .doOnComplete(emitter::complete)
+                .subscribe();
+        return emitter;
+    }
+
+    @GetMapping("/sse")
+    public SseEmitter handleSse() {
+        SseEmitter emitter = new SseEmitter();
+
+        new Thread(() -> {
+            try {
+                for (int i = 0; i < 5; i++) {
+                    emitter.send("Message " + i);
+                    Thread.sleep(1000); // 模拟延迟
+                }
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+        }).start();
+
+        return emitter;
+    }
+
 
     // endregion
 }

@@ -224,7 +224,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // TODO AI生成图标
         String appDesc = app.getAppDesc();
         // 拼接ai生成命令
-        String command = "我现在在床架一共应用，请你根据我的描述生成一个应用图标，描述如下：\n" + appDesc;
+        String command = "我现在在创建一个应用，请你根据我的描述生成一个应用图标，描述如下：\n" + appDesc;
         String url = aiManager.doIconRequest(command);
 
         String realURL = ossManager.putObjectFromURL(app, url);
