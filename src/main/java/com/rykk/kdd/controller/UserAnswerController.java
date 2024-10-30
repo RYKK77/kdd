@@ -95,6 +95,7 @@ public class UserAnswerController {
         try {
             UserAnswer userAnswerWithResult = scoringStrategyExecutor.doScore(choices, app);
             userAnswerWithResult.setId(newUserAnswerId);
+            userAnswerWithResult.setAppId(null);   // 分表不能修改分片值
 //            userAnswerWithResult.setAppId(null);
             userAnswerService.updateById(userAnswerWithResult);
         } catch (Exception e) {

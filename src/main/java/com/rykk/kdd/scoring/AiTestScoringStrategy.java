@@ -134,7 +134,7 @@ public class AiTestScoringStrategy implements ScoringStrategy {
 
         // 定义锁
         RLock lock = redissonClient.getLock(AI_ANSWER_LOCK + ":" + cacheKey);
-        boolean isLocked = lock.tryLock(15, 15, TimeUnit.SECONDS); // 5秒等待，15秒自动释放
+        boolean isLocked = lock.tryLock(5, 15, TimeUnit.SECONDS); // 5秒等待，15秒自动释放
 
         if (!isLocked) {
             throw new RuntimeException("系统繁忙，请稍后重试");
