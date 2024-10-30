@@ -89,7 +89,7 @@ public class UserAnswerController {
         } catch (DuplicateKeyException e) {
             // ignore error
         }
-        // 返回新写入的数据 id
+        // 返回新写入的数据 id（数据库自动生成）
         long newUserAnswerId = userAnswer.getId();
         // 调用评分模块
         try {

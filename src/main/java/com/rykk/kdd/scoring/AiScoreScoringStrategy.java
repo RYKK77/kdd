@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * AI打分类应用评分策略
  */
-//TODO 待优化
+//TODO 待优化——真实选项
 @ScoringStrategyConfig(appType = AppTypeEnum.SCORE, scoringStrategy = AppScoringStrategyEnum.AI)
 public class AiScoreScoringStrategy implements ScoringStrategy {
 
